@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Expedientes de Cthulhu</title>
+<meta name="theme-color" content="#1b2a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Expedientes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: expediente de detective de una columna, pestañas fijas arriba, barra de guardado abajo */
+@import url("https://fonts.googleapis.com/css2?family=Special+Elite&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
+:root{
+  --bg:#e6eae3; --paper:#f6f7f2; --ink:#1b2a2d; --muted:#5b6b67; --rule:#c8d0c5; --soft:#dde3da;
+  --accent:#1f5d63; --accent-ink:#f2f7f5; --blood:#9a2f28; --mind:#5b4a86; --luck:#8a6a14; --ok:#2f6b3a;
+  --f-display:"Special Elite","Courier New",Courier,monospace;
+  --f-body:"Libre Franklin",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1517; --paper:#172024; --ink:#dfe7e1; --muted:#8fa19c; --rule:#2c393c; --soft:#1f2a2e;
+  --accent:#6fb5b1; --accent-ink:#0f1517; --blood:#e3826f; --mind:#b0a0dc; --luck:#d8b452; --ok:#7cc48a; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f1517; --paper:#172024; --ink:#dfe7e1; --muted:#8fa19c; --rule:#2c393c; --soft:#1f2a2e;
+  --accent:#6fb5b1; --accent-ink:#0f1517; --blood:#e3826f; --mind:#b0a0dc; --luck:#d8b452; --ok:#7cc48a; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+#root{max-width:780px;margin:0 auto;padding-inline:16px;padding-block:14px 48px}
+button,input,textarea,select{font:inherit;color:inherit}
+input,textarea{background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:64px;line-height:1.45}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[type=number]{font-family:var(--f-mono);-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* cabecera */
+.head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;padding-bottom:12px;border-bottom:2px solid var(--ink)}
+.head h1{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,8vw,44px);line-height:1;margin:0;letter-spacing:.02em}
+.head .sub{color:var(--muted);margin-top:6px}
+.stamp{font-family:var(--f-display);border:2px solid var(--blood);color:var(--blood);padding:2px 8px;transform:rotate(-3deg);font-size:13px;letter-spacing:.1em;align-self:center}
+
+/* pestañas */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;padding-block:10px;margin-bottom:6px;scrollbar-width:none}
+.tabs button{flex:0 0 auto;border:1px solid var(--rule);background:var(--paper);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:500}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+section{margin-top:18px}
+h2{font-family:var(--f-display);font-weight:400;font-size:20px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
+h2 small{font-family:var(--f-body);font-size:12px;color:var(--muted)}
+
+/* constantes vitales */
+.vitals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.vital{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;border-top:4px solid var(--c)}
+.vital .row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.vital .big{display:flex;align-items:baseline;gap:4px}
+.vital .big input{width:3.4em;font-size:28px;font-weight:600;padding:0 4px;border-color:transparent;background:transparent;color:var(--c)}
+.vital .big input:focus{border-color:var(--rule)}
+.vital .max{color:var(--muted);font-family:var(--f-mono)}
+.vital .max input{width:3em;padding:2px 4px;font-size:13px}
+.bar{height:6px;background:var(--soft);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c);transition:width .2s}
+.step{display:flex;gap:4px}
+.step button{width:34px;height:34px;border-radius:8px;border:1px solid var(--rule);background:var(--bg);cursor:pointer;font-size:18px;line-height:1}
+.hint{font-size:12px;color:var(--muted)}
+.flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.flag{display:flex;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;background:var(--paper);cursor:pointer;font-size:13px}
+.flag input{width:auto;accent-color:var(--blood)}
+.flag:has(input:checked){border-color:var(--blood);color:var(--blood);font-weight:600}
+
+/* características */
+.chars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.char{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px}
+.char button.k{background:none;border:0;padding:0;text-align:left;cursor:pointer;font-weight:700;letter-spacing:.06em;font-size:12px;color:var(--muted)}
+.char button.k:hover{color:var(--accent)}
+.char input{font-size:22px;font-weight:600;padding:2px 4px}
+.hf{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;gap:8px}
+.extra{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+
+/* info */
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+
+/* habilidades */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.toolbar input{flex:1 1 160px}
+.seg{display:flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--paper);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.skills{background:var(--paper);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.sk{display:grid;grid-template-columns:28px minmax(0,1fr) 64px 70px 28px;gap:8px;align-items:center;padding:7px 10px;border-top:1px solid var(--soft)}
+.sk:first-child{border-top:0}
+.sk input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.sk .nm{background:none;border:0;padding:0;text-align:left;cursor:pointer;min-width:0}
+.sk .nm b{font-weight:500}
+.sk .nm span{color:var(--muted);font-size:12px;margin-left:4px}
+.sk.tr .nm b{font-weight:700}
+.sk input.v{text-align:center;padding:4px}
+.sk .hf{justify-content:flex-end}
+.sk .del{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px}
+.addrow{display:grid;grid-template-columns:minmax(0,1fr) 80px auto;gap:8px;margin-top:10px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.legend{font-size:12px;color:var(--muted);margin-top:8px}
+
+/* armas */
+.weapon{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.weapon .top{display:flex;gap:8px;align-items:center}
+.weapon .top input{font-weight:600;font-size:16px}
+.wgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tri{display:flex;gap:6px}
+.tri div{flex:1;text-align:center;background:var(--bg);border-radius:6px;padding:4px}
+.tri b{display:block;font-family:var(--f-mono);font-size:18px}
+.tri span{font-size:11px;color:var(--muted)}
+.ammo{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pip{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);display:inline-block}
+.pip.on{background:var(--ink)}
+
+/* compañeros */
+.mate{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px;gap:8px;margin-bottom:8px}
+
+/* barra guardar */
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--ink);color:var(--bg);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.savebar .btn{background:var(--bg);color:var(--ink);border-color:var(--bg)}
+.savebar .btn.ghost{background:transparent;color:var(--bg);border-color:var(--muted)}
+.savebar.saved{background:var(--paper);color:var(--muted);border-top:1px solid var(--rule)}
+
+/* panel de tirada */
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(10,15,16,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet .card{background:var(--paper);color:var(--ink);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.sheet h3{font-family:var(--f-display);font-weight:400;margin:0;font-size:22px}
+.targets{display:flex;gap:6px}
+.targets div{flex:1;text-align:center;border:1px solid var(--rule);border-radius:8px;padding:6px}
+.targets b{display:block;font-family:var(--f-mono);font-size:20px}
+.targets span{font-size:11px;color:var(--muted)}
+.mods{display:flex;gap:4px;flex-wrap:wrap}
+.mods button{flex:1;min-width:52px;border:1px solid var(--rule);background:var(--bg);border-radius:8px;padding:6px 4px;cursor:pointer;font-size:13px}
+.mods button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.result{text-align:center;min-height:90px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.result .n{font-family:var(--f-mono);font-size:46px;font-weight:600;line-height:1}
+.result .d{font-family:var(--f-display);font-size:20px}
+.result .dice{font-size:12px;color:var(--muted)}
+.g-crit,.g-ext{color:var(--ok)} .g-dif,.g-norm{color:var(--accent)} .g-fail{color:var(--muted)} .g-fum{color:var(--blood)}
+@media (max-width:520px){
+  .chars,.extra{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .char{padding:6px}
+  .char input{font-size:18px}
+  .hf{gap:4px;font-size:11px}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .sk{grid-template-columns:24px minmax(0,1fr) 54px 58px 22px;gap:6px;padding:7px 8px}
+  .wgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+select{background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:6px;width:100%;min-width:0}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.back{background:none;border:0;padding:4px 0;cursor:pointer;color:var(--accent);font-weight:600}
+.status{font-size:12px;color:var(--muted);transition:color .2s}
+.status.ok{color:var(--ok)} .status.warn{color:var(--blood);font-weight:600}
+.who-list{display:flex;flex-direction:column;gap:8px}
+.who{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;text-align:left;background:var(--paper);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px;cursor:pointer}
+.who b{font-family:var(--f-display);font-weight:400;font-size:20px}
+.who span{grid-column:1;color:var(--muted);font-size:13px}
+.who em{grid-column:2;grid-row:1/3;align-self:center;font-style:normal;font-size:12px;color:var(--muted)}
+.intro p{max-width:60ch;margin:0}
+.empty{padding:16px;color:var(--muted);font-size:14px}
+.derive{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.btn.danger{background:transparent;color:var(--blood);border-color:var(--blood)}
+.filebtn{display:inline-flex;align-items:center}
+.presets{display:flex;flex-direction:column;gap:6px}
+.preset{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:10px 12px}
+.preset>div{display:flex;flex-direction:column;min-width:0}
+.preset b{font-family:var(--f-display);font-weight:400;font-size:18px}
+.preset span{color:var(--muted);font-size:13px}
+</style>
+</head><body>
+<div id="root"></div>
+<script>(function(){
+  var STORE = 'cthulhu-fichas-v1', TAB_KEY = 'cthulhu-fichas-tab';
+  var memStore = null;          /* respaldo si el navegador bloquea el almacenamiento */
+  var storageOk = true;
+  var downloads = null;
+  var STANDALONE = !(window.claude && window.claude.use);
+
+  var BASE_SKILLS = [["Antropología",1],["Armas de fuego (Arma corta)",20],["Armas de fuego (Fusil/Escopeta)",25],["Arqueología",1],["Arte/Artesanía (Fotografía)",5],["Buscar libros",20],["Cerrajería",1],["Charlatanería",5],["Ciencias ocultas",5],["Combatir (Pelea)",25],["Conducir automóvil",20],["Conducir maquinaria",1],["Contabilidad",5],["Crédito",0],["Derecho",5],["Descubrir",25],["Disfrazarse",5],["Electricidad",10],["Encanto",15],["Equitación",5],["Escuchar",20],["Esquivar","DES/2"],["Historia",5],["Intimidar",15],["Juego de manos",10],["Lanzar",20],["Lengua propia","EDU"],["Mecánica",10],["Medicina",1],["Mitos de Cthulhu",0],["Nadar",20],["Naturaleza",10],["Orientarse",10],["Persuasión",10],["Primeros auxilios",30],["Psicoanálisis",1],["Psicología",10],["Saltar",20],["Seguir rastros",10],["Sigilo",20],["Tasación",5],["Trepar",20]];
+
+  var PRESETS = [{"id": "ronald", "label": "Ronald Daglish", "jugador": "", "state": {"info": {"nombre": "Ronald Daglish", "jugador": "", "ocupacion": "Anticuario", "genero": "Varón", "edad": "28", "residencia": "Nueva Jersey", "nacimiento": "Londres", "epoca": "Años 20"}, "car": {"FUE": 25, "CON": 50, "TAM": 50, "DES": 35, "APA": 40, "INT": 70, "POD": 65, "EDU": 61}, "mov": 7, "bd": "-1", "corp": "-1", "pv": {"cur": 4, "max": 10}, "pm": {"cur": 13, "max": 13}, "cor": {"cur": 62, "ini": 65, "max": 98}, "suerte": {"cur": 50}, "estado": {"grave": false, "inconsciente": false, "moribundo": false, "locTemp": false, "locIndef": false}, "skills": [{"n": "Antropología", "b": 1}, {"n": "Armas de fuego (Arma corta)", "b": 20}, {"n": "Armas de fuego (Fusil/Escopeta)", "b": 25, "v": 32}, {"n": "Arqueología", "b": 1}, {"n": "Arte/Artesanía (Escultura)", "b": 5, "custom": true, "v": 45}, {"n": "Buscar libros", "b": 20, "v": 60}, {"n": "Cerrajería", "b": 1}, {"n": "Charlatanería", "b": 5}, {"n": "Ciencias ocultas", "b": 5}, {"n": "Combatir (Pelea)", "b": 25}, {"n": "Conducir automóvil", "b": 20, "v": 50}, {"n": "Conducir maquinaria", "b": 1, "x": true}, {"n": "Contabilidad", "b": 5}, {"n": "Crédito", "b": 0, "v": 30}, {"n": "Derecho", "b": 5}, {"n": "Descubrir", "b": 25, "v": 65, "x": true}, {"n": "Disfrazarse", "b": 5}, {"n": "Electricidad", "b": 10}, {"n": "Encanto", "b": 15}, {"n": "Equitación", "b": 5}, {"n": "Escuchar", "b": 20, "v": 50}, {"n": "Esquivar", "b": "DES/2"}, {"n": "Historia", "b": 5, "v": 60, "x": true}, {"n": "Intimidar", "b": 15}, {"n": "Juego de manos", "b": 10}, {"n": "Lanzar", "b": 20}, {"n": "Lengua propia", "b": "EDU"}, {"n": "Mecánica", "b": 10}, {"n": "Medicina", "b": 1}, {"n": "Mitos de Cthulhu", "b": 0, "v": 1}, {"n": "Nadar", "b": 20}, {"n": "Naturaleza", "b": 10}, {"n": "Orientarse", "b": 10}, {"n": "Otras lenguas (Español)", "b": 1, "custom": true, "v": 40}, {"n": "Persuasión", "b": 10, "v": 57, "x": true}, {"n": "Primeros auxilios", "b": 30}, {"n": "Psicoanálisis", "b": 1}, {"n": "Psicología", "b": 10}, {"n": "Saltar", "b": 20}, {"n": "Seguir rastros", "b": 10}, {"n": "Sigilo", "b": 20, "v": 59, "x": true}, {"n": "Tasación", "b": 5, "v": 55}, {"n": "Trepar", "b": 20}], "armas": [{"n": "Desarmado", "s": "Combatir (Pelea)", "dmg": "1D3+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}], "trasfondo": {"descripcion": "", "rasgos": "", "ideologia": "", "lesiones": "Balazo y puñetazo.", "allegados": "Madre, hermana, hermano.", "fobias": "", "lugares": "Tienda de antigüedades.", "tomos": "", "posesiones": "", "encuentros": ""}, "equipo": "", "dinero": {"gasto": "10 $", "dinero": "143 $", "bienes": "1500 $", "nota": "-50"}, "companeros": [], "notas": ""}}, {"id": "freddy", "label": "Freddy Mcmillan", "jugador": "", "state": {"info": {"nombre": "Freddy Mcmillan", "jugador": "", "ocupacion": "Vagabundo", "genero": "M", "edad": "21", "residencia": "Nueva York", "nacimiento": "Hollywood", "epoca": "Años 20"}, "car": {"FUE": 40, "CON": 35, "TAM": 60, "DES": 30, "APA": 55, "INT": 55, "POD": 50, "EDU": 60}, "mov": 7, "bd": "0", "corp": "0", "pv": {"cur": 9, "max": 9}, "pm": {"cur": 10, "max": 10}, "cor": {"cur": 49, "ini": 50, "max": 99}, "suerte": {"cur": 70}, "estado": {"grave": false, "inconsciente": false, "moribundo": false, "locTemp": false, "locIndef": false}, "skills": [{"n": "Antropología", "b": 1}, {"n": "Armas de fuego (Arma corta)", "b": 20}, {"n": "Armas de fuego (Fusil/Escopeta)", "b": 25}, {"n": "Arqueología", "b": 1}, {"n": "Buscar libros", "b": 20}, {"n": "Cerrajería", "b": 1}, {"n": "Charlatanería", "b": 5, "v": 50, "x": true}, {"n": "Ciencias ocultas", "b": 5}, {"n": "Combatir (Pelea)", "b": 25, "v": 60}, {"n": "Conducir automóvil", "b": 20}, {"n": "Conducir maquinaria", "b": 1}, {"n": "Contabilidad", "b": 5}, {"n": "Crédito", "b": 0}, {"n": "Derecho", "b": 5}, {"n": "Descubrir", "b": 25, "x": true}, {"n": "Disfrazarse", "b": 5}, {"n": "Electricidad", "b": 10}, {"n": "Encanto", "b": 15}, {"n": "Equitación", "b": 5}, {"n": "Escuchar", "b": 20, "v": 60, "x": true}, {"n": "Esquivar", "b": "DES/2"}, {"n": "Historia", "b": 5}, {"n": "Intimidar", "b": 15}, {"n": "Juego de manos", "b": 10, "v": 40}, {"n": "Lanzar", "b": 20}, {"n": "Lengua propia", "b": "EDU"}, {"n": "Mecánica", "b": 10}, {"n": "Medicina", "b": 1}, {"n": "Mitos de Cthulhu", "b": 0}, {"n": "Nadar", "b": 20, "v": 50}, {"n": "Naturaleza", "b": 10}, {"n": "Orientarse", "b": 10, "v": 60}, {"n": "Persuasión", "b": 10}, {"n": "Primeros auxilios", "b": 30, "v": 60}, {"n": "Psicoanálisis", "b": 1}, {"n": "Psicología", "b": 10}, {"n": "Saltar", "b": 20, "v": 40}, {"n": "Seguir rastros", "b": 10}, {"n": "Sigilo", "b": 20, "v": 50}, {"n": "Tasación", "b": 5}, {"n": "Trepar", "b": 20, "v": 50}], "armas": [{"n": "Desarmado", "s": "Combatir (Pelea)", "dmg": "1D3+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}], "trasfondo": {"descripcion": "Altura promedio, moreno de pelo, desaliñado.", "rasgos": "Intento de comediante fallido, odiado por su padre.", "ideologia": "Agnóstico.", "lesiones": "Marcas y cicatrices por peleas callejeras.", "allegados": "Padre que le desheredó, madre muerta.", "fobias": "Se pelea con los ególatras como su padre.", "lugares": "", "tomos": "", "posesiones": "Collar de su madre.", "encuentros": ""}, "equipo": "Mochila desgastada", "dinero": {"gasto": "10 $", "dinero": "90 $", "bienes": "", "nota": ""}, "companeros": [], "notas": ""}}, {"id": "amuwu", "label": "Amuwu", "jugador": "", "state": {"info": {"nombre": "Amuwu", "jugador": "", "ocupacion": "Miembro de tribu", "genero": "", "edad": "28", "residencia": "", "nacimiento": "", "epoca": "Años 20"}, "car": {"FUE": 50, "CON": 60, "TAM": 70, "DES": 75, "APA": 25, "INT": 85, "POD": 75, "EDU": 65}, "mov": 8, "bd": "0", "corp": "0", "pv": {"cur": 13, "max": 13}, "pm": {"cur": 15, "max": 15}, "cor": {"cur": 79, "ini": 75, "max": 98}, "suerte": {"cur": 70}, "estado": {"grave": false, "inconsciente": false, "moribundo": false, "locTemp": false, "locIndef": false}, "skills": [{"n": "Antropología", "b": 1}, {"n": "Armas de fuego (Arma corta)", "b": 20}, {"n": "Armas de fuego (Fusil/Escopeta)", "b": 25}, {"n": "Arqueología", "b": 1}, {"n": "Buscar libros", "b": 20}, {"n": "Cerrajería", "b": 1}, {"n": "Charlatanería", "b": 5, "v": 55, "x": true}, {"n": "Ciencias ocultas", "b": 5, "v": 65, "x": true}, {"n": "Combatir (Arco)", "b": 15, "custom": true, "v": 46}, {"n": "Combatir (Pelea)", "b": 25, "v": 87, "x": true}, {"n": "Conducir automóvil", "b": 20}, {"n": "Conducir maquinaria", "b": 1}, {"n": "Contabilidad", "b": 5}, {"n": "Crédito", "b": 0, "v": 20}, {"n": "Derecho", "b": 5}, {"n": "Descubrir", "b": 25, "v": 55, "x": true}, {"n": "Disfrazarse", "b": 5}, {"n": "Electricidad", "b": 10}, {"n": "Encanto", "b": 15}, {"n": "Equitación", "b": 5}, {"n": "Escuchar", "b": 20, "x": true}, {"n": "Esquivar", "b": "DES/2", "v": 37}, {"n": "Historia", "b": 5}, {"n": "Intimidar", "b": 15, "x": true}, {"n": "Juego de manos", "b": 10, "v": 40}, {"n": "Lanzar", "b": 20}, {"n": "Lengua propia", "b": "EDU"}, {"n": "Mecánica", "b": 10}, {"n": "Medicina", "b": 1}, {"n": "Mitos de Cthulhu", "b": 0, "v": 1}, {"n": "Nadar", "b": 20}, {"n": "Naturaleza", "b": 10, "v": 50, "x": true}, {"n": "Orientarse", "b": 10, "v": 40}, {"n": "Persuasión", "b": 10}, {"n": "Primeros auxilios", "b": 30}, {"n": "Psicoanálisis", "b": 1}, {"n": "Psicología", "b": 10}, {"n": "Saltar", "b": 20}, {"n": "Seguir rastros", "b": 10, "v": 40}, {"n": "Sigilo", "b": 20, "v": 41}, {"n": "Supervivencia (Selva)", "b": 10, "custom": true, "v": 50}, {"n": "Tasación", "b": 5}, {"n": "Trepar", "b": 20, "v": 30, "x": true}], "armas": [{"n": "Desarmado", "s": "Combatir (Pelea)", "dmg": "1D3+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}, {"n": "Navaja", "s": "Combatir (Pelea)", "dmg": "1D4+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}, {"n": "Arco", "s": "Combatir (Arco)", "dmg": "1D6+BD", "alc": "", "at": "1", "mun": "", "av": "", "carga": 0}], "trasfondo": {"descripcion": "", "rasgos": "", "ideologia": "Típico personaje de una tribu.", "lesiones": "", "allegados": "Sin familia.", "fobias": "", "lugares": "Amazonas.", "tomos": "", "posesiones": "Mi vida.", "encuentros": ""}, "equipo": "", "dinero": {"gasto": "10 $", "dinero": "40 $", "bienes": "1000 $", "nota": "gasto -2; dinero +100"}, "companeros": [], "notas": ""}}, {"id": "robert", "label": "Padre Robert", "jugador": "", "state": {"info": {"nombre": "Padre Robert", "jugador": "", "ocupacion": "Clérigo", "genero": "M", "edad": "52", "residencia": "", "nacimiento": "", "epoca": "Años 20"}, "car": {"FUE": 90, "CON": 40, "TAM": 90, "DES": 40, "APA": 40, "INT": 80, "POD": 50, "EDU": 90}, "mov": 6, "bd": "+1D6", "corp": "2", "pv": {"cur": 13, "max": 13}, "pm": {"cur": 10, "max": 10}, "cor": {"cur": 47, "ini": 50, "max": 99}, "suerte": {"cur": 50}, "estado": {"grave": false, "inconsciente": false, "moribundo": false, "locTemp": false, "locIndef": false}, "skills": [{"n": "Antropología", "b": 1}, {"n": "Armas de fuego (Arma corta)", "b": 20}, {"n": "Armas de fuego (Fusil/Escopeta)", "b": 25}, {"n": "Arqueología", "b": 1, "v": 20, "x": true}, {"n": "Buscar libros", "b": 20, "v": 30, "x": true}, {"n": "Cerrajería", "b": 1, "v": 30, "x": true}, {"n": "Charlatanería", "b": 5}, {"n": "Ciencias ocultas", "b": 5, "v": 20, "x": true}, {"n": "Combatir (Pelea)", "b": 25, "v": 45, "x": true}, {"n": "Conducir automóvil", "b": 20}, {"n": "Conducir maquinaria", "b": 1}, {"n": "Contabilidad", "b": 5, "v": 50, "x": true}, {"n": "Crédito", "b": 0}, {"n": "Derecho", "b": 5}, {"n": "Descubrir", "b": 25, "v": 20, "x": true}, {"n": "Disfrazarse", "b": 5}, {"n": "Electricidad", "b": 10, "v": 20}, {"n": "Encanto", "b": 15}, {"n": "Equitación", "b": 5}, {"n": "Escuchar", "b": 20, "v": 20, "x": true}, {"n": "Esquivar", "b": "DES/2"}, {"n": "Historia", "b": 5, "v": 40, "x": true}, {"n": "Intimidar", "b": 15, "v": 10, "x": true}, {"n": "Juego de manos", "b": 10}, {"n": "Lanzar", "b": 20}, {"n": "Lengua propia", "b": "EDU"}, {"n": "Mecánica", "b": 10}, {"n": "Medicina", "b": 1}, {"n": "Mitos de Cthulhu", "b": 0}, {"n": "Nadar", "b": 20}, {"n": "Naturaleza", "b": 10}, {"n": "Orientarse", "b": 10, "v": 50, "x": true}, {"n": "Otras lenguas (Italiano)", "b": 1, "custom": true, "v": 20, "x": true}, {"n": "Persuasión", "b": 10, "v": 10, "x": true}, {"n": "Primeros auxilios", "b": 30}, {"n": "Psicoanálisis", "b": 1}, {"n": "Psicología", "b": 10, "v": 10, "x": true}, {"n": "Saltar", "b": 20}, {"n": "Seguir rastros", "b": 10}, {"n": "Sigilo", "b": 20}, {"n": "Tasación", "b": 5}, {"n": "Trepar", "b": 20}], "armas": [{"n": "Desarmado", "s": "Combatir (Pelea)", "dmg": "1D3+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}, {"n": "Sellado (nudillera)", "s": "Combatir (Pelea)", "dmg": "1D3+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}], "trasfondo": {"descripcion": "", "rasgos": "", "ideologia": "", "lesiones": "", "allegados": "", "fobias": "", "lugares": "", "tomos": "", "posesiones": "", "encuentros": ""}, "equipo": "", "dinero": {"gasto": "10 $", "dinero": "40 $", "bienes": "1000 $", "nota": "-1 -1 +50"}, "companeros": [], "notas": "REVISAR CON EL PAPEL: la foto estaba muy borrosa. Nombre, jugador, edad y lugar de nacimiento no se leen bien. Varias habilidades están por debajo de su valor base (Descubrir 20, Intimidar 10), así que en el papel parecen apuntados los puntos invertidos y no el total. Daño del arma en el papel: algo como «1D3 + 1D? toque»."}}, {"id": "tucu", "label": "Tucu Cito", "jugador": "", "state": {"info": {"nombre": "Tucu Cito", "jugador": "", "ocupacion": "Criminal", "genero": "Hombre", "edad": "18", "residencia": "", "nacimiento": "", "epoca": "Años 20"}, "car": {"FUE": 25, "CON": 45, "TAM": 60, "DES": 50, "APA": 65, "INT": 60, "POD": 60, "EDU": 45}, "mov": 7, "bd": "0", "corp": "0", "pv": {"cur": 10, "max": 10}, "pm": {"cur": 12, "max": 12}, "cor": {"cur": 56, "ini": 60, "max": 99}, "suerte": {"cur": 59}, "estado": {"grave": false, "inconsciente": false, "moribundo": false, "locTemp": false, "locIndef": false}, "skills": [{"n": "Antropología", "b": 1}, {"n": "Armas de fuego (Arma corta)", "b": 20}, {"n": "Armas de fuego (Fusil/Escopeta)", "b": 25, "v": 65, "x": true}, {"n": "Arqueología", "b": 1}, {"n": "Buscar libros", "b": 20}, {"n": "Cerrajería", "b": 1}, {"n": "Charlatanería", "b": 5, "v": 35}, {"n": "Ciencias ocultas", "b": 5}, {"n": "Combatir (Pelea)", "b": 25}, {"n": "Conducir automóvil", "b": 20, "v": 59}, {"n": "Conducir maquinaria", "b": 1}, {"n": "Contabilidad", "b": 5}, {"n": "Crédito", "b": 0, "v": 30}, {"n": "Derecho", "b": 5}, {"n": "Descubrir", "b": 25, "v": 50, "x": true}, {"n": "Disfrazarse", "b": 5, "x": true}, {"n": "Electricidad", "b": 10}, {"n": "Encanto", "b": 15, "x": true}, {"n": "Equitación", "b": 5}, {"n": "Escuchar", "b": 20}, {"n": "Esquivar", "b": "DES/2", "v": 25}, {"n": "Historia", "b": 5}, {"n": "Intimidar", "b": 15}, {"n": "Juego de manos", "b": 10, "v": 38, "x": true}, {"n": "Lanzar", "b": 20}, {"n": "Lengua propia", "b": "EDU"}, {"n": "Mecánica", "b": 10}, {"n": "Medicina", "b": 1}, {"n": "Mitos de Cthulhu", "b": 0}, {"n": "Nadar", "b": 20}, {"n": "Naturaleza", "b": 10}, {"n": "Orientarse", "b": 10}, {"n": "Persuasión", "b": 10, "v": 75, "x": true}, {"n": "Primeros auxilios", "b": 30}, {"n": "Psicoanálisis", "b": 1}, {"n": "Psicología", "b": 10, "v": 40, "x": true}, {"n": "Saltar", "b": 20}, {"n": "Seguir rastros", "b": 10}, {"n": "Sigilo", "b": 20, "v": 50, "x": true}, {"n": "Supervivencia", "b": 10, "custom": true, "v": 25}, {"n": "Tasación", "b": 5, "v": 10, "x": true}, {"n": "Trepar", "b": 20}], "armas": [{"n": "Desarmado", "s": "Combatir (Pelea)", "dmg": "1D3+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}, {"n": "Carabina", "s": "Armas de fuego (Fusil/Escopeta)", "dmg": "", "alc": "", "at": "1", "mun": "", "av": "", "carga": 0}], "trasfondo": {"descripcion": "", "rasgos": "", "ideologia": "", "lesiones": "", "allegados": "", "fobias": "", "lugares": "", "tomos": "", "posesiones": "", "encuentros": ""}, "equipo": "9 balas", "dinero": {"gasto": "10 $", "dinero": "180 $", "bienes": "1500 $", "nota": ""}, "companeros": [{"p": "Amuwu", "j": ""}], "notas": "Mejoras apuntadas en el papel: Persuasión, Juego de manos +3, Conducir +9, Fusil/Escopeta, Sigilo, Descubrir."}}, {"id": "bort", "label": "Bort", "jugador": "Rabox", "state": {"info": {"nombre": "Bort", "jugador": "Rabox", "ocupacion": "Investigador privado", "genero": "Hombre", "edad": "18", "residencia": "Nueva York", "nacimiento": "Nueva York", "epoca": "Años 20"}, "car": {"FUE": 35, "CON": 25, "TAM": 75, "DES": 75, "APA": 50, "INT": 75, "POD": 50, "EDU": 75}, "mov": 8, "bd": "0", "corp": "0", "pv": {"cur": 10, "max": 10}, "pm": {"cur": 10, "max": 10}, "cor": {"cur": 50, "ini": 50, "max": 99}, "suerte": {"cur": 44}, "estado": {"grave": false, "inconsciente": false, "moribundo": false, "locTemp": false, "locIndef": false}, "skills": [{"n": "Antropología", "b": 1}, {"n": "Armas de fuego (Arma corta)", "b": 20, "v": 50}, {"n": "Armas de fuego (Fusil/Escopeta)", "b": 25}, {"n": "Arqueología", "b": 1}, {"n": "Arte/Artesanía (Fotografía)", "b": 5, "v": 70, "x": true}, {"n": "Buscar libros", "b": 20, "v": 60, "x": true}, {"n": "Cerrajería", "b": 1, "v": 61, "x": true}, {"n": "Charlatanería", "b": 5}, {"n": "Ciencias ocultas", "b": 5}, {"n": "Combatir (Pelea)", "b": 25, "v": 40}, {"n": "Conducir automóvil", "b": 20}, {"n": "Conducir maquinaria", "b": 1}, {"n": "Contabilidad", "b": 5}, {"n": "Crédito", "b": 0, "v": 20}, {"n": "Derecho", "b": 5, "v": 25}, {"n": "Descubrir", "b": 25, "v": 65, "x": true}, {"n": "Disfrazarse", "b": 5, "v": 40}, {"n": "Electricidad", "b": 10}, {"n": "Encanto", "b": 15}, {"n": "Equitación", "b": 5}, {"n": "Escuchar", "b": 20}, {"n": "Esquivar", "b": "DES/2", "v": 37}, {"n": "Historia", "b": 5}, {"n": "Intimidar", "b": 15}, {"n": "Juego de manos", "b": 10}, {"n": "Lanzar", "b": 20}, {"n": "Lengua propia", "b": "EDU", "v": 75}, {"n": "Mecánica", "b": 10}, {"n": "Medicina", "b": 1}, {"n": "Mitos de Cthulhu", "b": 0}, {"n": "Nadar", "b": 20}, {"n": "Naturaleza", "b": 10}, {"n": "Orientarse", "b": 10}, {"n": "Persuasión", "b": 10, "v": 60, "x": true}, {"n": "Primeros auxilios", "b": 30}, {"n": "Psicoanálisis", "b": 1}, {"n": "Psicología", "b": 10, "v": 30}, {"n": "Saltar", "b": 20}, {"n": "Seguir rastros", "b": 10, "v": 60}, {"n": "Sigilo", "b": 20, "v": 60}, {"n": "Tasación", "b": 5}, {"n": "Trepar", "b": 20}], "armas": [{"n": "Desarmado", "s": "Combatir (Pelea)", "dmg": "1D3+BD", "alc": "—", "at": "1", "mun": "", "av": "", "carga": 0}, {"n": "Colt .38", "s": "Armas de fuego (Arma corta)", "dmg": "1D10", "alc": "15 m", "at": "1", "mun": "6", "av": "", "carga": 6}], "trasfondo": {"descripcion": "Joven investigador con ánimo de desarrollar su carrera como detective.", "rasgos": "Ojos marrones, pelo largo castaño.", "ideologia": "Empírico.", "lesiones": "", "allegados": "Joven bibliotecaria de la Universidad de California.", "fobias": "Siempre se palpa los bolsillos para notar su cámara con él.", "lugares": "Parque boscoso cerca de su universidad donde siempre se quedaba para reflexionar sobre sus casos.", "tomos": "", "posesiones": "Cámara.", "encuentros": ""}, "equipo": "Cámara Vest Pocket Kodak (8 fotos)\nGanzúas\n3 tambores de munición (6 balas/tambor)\n2 rollos de repuesto para la cámara\nGabardina", "dinero": {"gasto": "10 $", "dinero": "40 $", "bienes": "1000 $", "nota": "-8 -1"}, "companeros": [], "notas": ""}}];
+
+  function blank(){
+    return {
+      info:{nombre:'',jugador:'',ocupacion:'',genero:'',edad:'',residencia:'',nacimiento:'',epoca:'Años 20'},
+      car:{FUE:'',CON:'',TAM:'',DES:'',APA:'',INT:'',POD:'',EDU:''},
+      mov:'',bd:'',corp:'',
+      pv:{cur:'',max:''},pm:{cur:'',max:''},cor:{cur:'',ini:'',max:99},suerte:{cur:''},
+      estado:{grave:false,inconsciente:false,moribundo:false,locTemp:false,locIndef:false},
+      skills:BASE_SKILLS.map(function(s){ return {n:s[0],b:s[1]}; }),
+      armas:[{n:'Desarmado',s:'Combatir (Pelea)',dmg:'1D3+BD',alc:'—',at:'1',mun:'',av:'',carga:0}],
+      trasfondo:{descripcion:'',rasgos:'',ideologia:'',lesiones:'',allegados:'',fobias:'',lugares:'',tomos:'',posesiones:'',encuentros:''},
+      equipo:'',dinero:{gasto:'',dinero:'',bienes:'',nota:''},companeros:[],notas:''
+    };
+  }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+  function loadDB(){
+    try { var raw = localStorage.getItem(STORE); return raw ? JSON.parse(raw) : {list:[],current:null}; }
+    catch(e){ storageOk = false; return memStore || {list:[],current:null}; }
+  }
+  function saveDB(){
+    try { localStorage.setItem(STORE, JSON.stringify(DB)); storageOk = true; }
+    catch(e){ storageOk = false; memStore = DB; }
+    flashSaved();
+  }
+  var DB = loadDB();
+  var S = null;
+  function pick(id){ var e = DB.list.filter(function(x){return x.id===id;})[0]; S = e ? e.state : null; DB.current = e ? id : null; }
+  pick(DB.current);
+
+  var ui = { tab:'ficha', filtro:'mias', q:'', view: S ? 'sheet' : 'home', msg:'' };
+  try { ui.tab = localStorage.getItem(TAB_KEY) || 'ficha'; } catch(e){}
+
+  var CH = ['FUE','CON','TAM','DES','APA','INT','POD','EDU'];
+  var CHN = {FUE:'Fuerza',CON:'Constitución',TAM:'Tamaño',DES:'Destreza',APA:'Apariencia',INT:'Inteligencia (Idea)',POD:'Poder',EDU:'Educación'};
+  var h2 = function(v){ return Math.floor((+v||0)/2); };
+  var h5 = function(v){ return Math.floor((+v||0)/5); };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function baseOf(sk){ if (sk.b==='DES/2') return h2(S.car.DES); if (sk.b==='EDU') return +S.car.EDU||0; return +sk.b||0; }
+  function valOf(sk){ return (sk.v==null||sk.v==='') ? baseOf(sk) : +sk.v; }
+  function skillByName(n){ for (var i=0;i<S.skills.length;i++) if (S.skills[i].n===n) return S.skills[i]; return null; }
+  function getPath(p){ return p.split('.').reduce(function(o,k){ return o==null?o:o[k]; }, S); }
+  function setPath(p,v){ var ks=p.split('.'), o=S; for (var i=0;i<ks.length-1;i++) o=o[ks[i]]; o[ks[ks.length-1]]=v; }
+
+  var saveTimer = null;
+  function changed(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveDB, 400); }
+  var flashT = null;
+  function flashSaved(){
+    var el = document.getElementById('status'); if (!el) return;
+    el.textContent = storageOk ? 'Guardado en este móvil' : 'Este navegador no deja guardar: exporta tu ficha antes de cerrar';
+    el.className = 'status' + (storageOk ? ' ok' : ' warn');
+    clearTimeout(flashT); if (storageOk) flashT = setTimeout(function(){ el.className='status'; el.textContent='Se guarda solo en este móvil'; }, 1600);
+  }
+
+  /* ---------- cálculo de derivados (reglas de 7ª edición) ---------- */
+  function derive(){
+    var c = S.car, F=+c.FUE||0, CO=+c.CON||0, T=+c.TAM||0, D=+c.DES||0, P=+c.POD||0, age=+S.info.edad||0;
+    var pv = Math.floor((CO+T)/10), pm = Math.floor(P/5);
+    S.pv.max = pv; S.pv.cur = pv; S.pm.max = pm; S.pm.cur = pm;
+    S.cor.ini = P; S.cor.cur = P;
+    var mov = (D<T && F<T) ? 7 : (D>T && F>T) ? 9 : 8;
+    if (age>=40) mov -= Math.min(5, Math.floor((age-30)/10));
+    S.mov = mov;
+    var sum = F+T, bd, corp;
+    if (sum<=64){ bd='-2'; corp='-2'; } else if (sum<=84){ bd='-1'; corp='-1'; } else if (sum<=124){ bd='0'; corp='0'; }
+    else if (sum<=164){ bd='+1D4'; corp='1'; } else if (sum<=204){ bd='+1D6'; corp='2'; }
+    else { var extra = Math.ceil((sum-204)/80); bd='+'+(1+extra)+'D6'; corp=String(2+extra); }
+    S.bd = bd; S.corp = corp;
+    var mitos = skillByName('Mitos de Cthulhu'); S.cor.max = 99 - (mitos ? valOf(mitos) : 0);
+  }
+
+  /* ---------- render ---------- */
+  var root = document.getElementById('root');
+  function inp(path, type, extra){
+    var v = getPath(path);
+    return '<input id="f-'+path.replace(/\./g,'-')+'" data-path="'+path+'" type="'+(type||'text')+'"'+(type==='number'?' inputmode="numeric"':'')+' value="'+esc(v)+'" '+(extra||'')+'>';
+  }
+  function ta(path, rows){ return '<textarea id="f-'+path.replace(/\./g,'-')+'" data-path="'+path+'" rows="'+(rows||3)+'">'+esc(getPath(path))+'</textarea>'; }
+  function field(label, html){ return '<label class="field"><span class="lbl">'+label+'</span>'+html+'</label>'; }
+  function hints(){
+    return {
+      pv: S.pv.max ? 'Herida grave si pierdes '+Math.ceil((+S.pv.max||0)/2)+'+ PV de un golpe.' : 'PV = (CON + TAM) / 10.',
+      cor: S.cor.cur!=='' ? 'Umbral diario de locura indefinida: perder '+h5(S.cor.cur)+'+ hoy. Perder 5+ de golpe → tirada de INT.' : 'Cordura inicial = POD.',
+      suerte: 'Tira 3D6×5 al crear el personaje.',
+      pm: 'Recuperas 1 PM por hora.'
+    };
+  }
+  function vital(key, label, color, maxPath, hint, luck){
+    var cur = +getPath(key+'.cur')||0, mx = luck ? 99 : (+getPath(maxPath)||1);
+    var pct = Math.max(0, Math.min(100, cur/mx*100));
+    var right = luck ? '<button class="btn ghost" data-roll-luck style="padding:3px 10px">Tirar</button>' : '<span class="max">máx '+inp(maxPath,'number','aria-label="'+label+' máximo"')+'</span>';
+    return '<div class="vital" style="--c:var('+color+')">'+
+      '<div class="row"><span class="lbl">'+label+'</span>'+right+'</div>'+
+      '<div class="row"><div class="big">'+inp(key+'.cur','number','aria-label="'+label+' actual" placeholder="—"')+'</div>'+
+      '<div class="step"><button data-step="'+key+'.cur" data-d="-1" aria-label="Restar">−</button><button data-step="'+key+'.cur" data-d="1" aria-label="Sumar">+</button></div></div>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="hint" data-hint="'+key+'">'+hint+'</div></div>';
+  }
+  function flag(k,label){ return '<label class="flag"><input type="checkbox" data-path="estado.'+k+'" id="f-estado-'+k+'"'+(S.estado[k]?' checked':'')+'>'+label+'</label>'; }
+
+  function tabFicha(){
+    var H = hints();
+    var out = '<section><h2>Investigador</h2><div class="grid2">'+
+      field('Nombre',inp('info.nombre','text','placeholder="Nombre del personaje"'))+field('Jugador',inp('info.jugador'))+
+      field('Ocupación',inp('info.ocupacion'))+field('Época',inp('info.epoca'))+
+      field('Género',inp('info.genero'))+field('Edad',inp('info.edad','number'))+
+      field('Residencia',inp('info.residencia'))+field('Nacimiento',inp('info.nacimiento'))+
+      '</div></section>';
+    out += '<section><h2>Características <small>toca el nombre para tirar</small></h2><div class="chars">';
+    CH.forEach(function(k){
+      out += '<div class="char"><button class="k" data-roll-char="'+k+'" title="'+CHN[k]+'">'+k+'</button>'+inp('car.'+k,'number','aria-label="'+CHN[k]+'" placeholder="—"')+'<div class="hf" data-hf="car.'+k+'"><span>½ '+h2(S.car[k])+'</span><span>⅕ '+h5(S.car[k])+'</span></div></div>';
+    });
+    var esq = skillByName('Esquivar')||{b:0};
+    out += '</div><div class="extra">'+
+      '<div class="char"><span class="lbl">Mov</span>'+inp('mov','number')+'</div>'+
+      '<div class="char"><span class="lbl">Bonif. daño</span>'+inp('bd')+'</div>'+
+      '<div class="char"><span class="lbl">Corpulencia</span>'+inp('corp')+'</div>'+
+      '<div class="char"><button class="k" data-roll-skill="Esquivar">ESQUIVAR</button><b class="num" style="font-size:20px">'+valOf(esq)+'</b><div class="hf"><span>½ '+h2(valOf(esq))+'</span><span>⅕ '+h5(valOf(esq))+'</span></div></div>'+
+      '</div><div class="derive"><button class="btn ghost" data-derive>Calcular PV, PM, Cordura, Mov y daño</button><span class="hint" id="derive-msg">Rellena antes características y edad. Sobrescribe esos valores.</span></div></section>';
+    out += '<section><h2>Estado</h2><div class="vitals">'+
+      vital('pv','Puntos de vida','--blood','pv.max',H.pv)+
+      vital('cor','Cordura','--mind','cor.max',H.cor)+
+      vital('suerte','Suerte','--luck','',H.suerte,true)+
+      vital('pm','Puntos de magia','--accent','pm.max',H.pm)+
+      '</div><div class="flags">'+
+      flag('grave','Herida grave')+flag('inconsciente','Inconsciente')+flag('moribundo','Moribundo')+flag('locTemp','Locura temporal')+flag('locIndef','Locura indefinida')+
+      '</div><div class="grid2" style="margin-top:10px">'+field('Cordura inicial',inp('cor.ini','number'))+'<div class="field"><span class="lbl">Tirada de cordura</span><button class="btn ghost" data-roll-san>Tirar cordura</button></div></div></section>';
+    return out;
+  }
+
+  function tabHab(){
+    var q = ui.q.trim().toLowerCase(), rows = '', any = false;
+    S.skills.forEach(function(sk,i){
+      var trained = (sk.v!=null && sk.v!=='') || sk.x;
+      if (trained) any = true;
+      if (ui.filtro==='mias' && !trained && !q) return;
+      if (q && sk.n.toLowerCase().indexOf(q)<0) return;
+      var v = valOf(sk);
+      rows += '<div class="sk'+(trained?' tr':'')+'">'+
+        '<input type="checkbox" id="f-sk-'+i+'-x" data-path="skills.'+i+'.x" title="Marca de experiencia"'+(sk.x?' checked':'')+'>'+
+        '<button class="nm" data-roll-skill-i="'+i+'"><b>'+esc(sk.n)+'</b><span>('+esc(sk.b==='DES/2'?'DES/2':sk.b==='EDU'?'EDU':sk.b+'%')+')</span></button>'+
+        '<input class="v num" type="number" inputmode="numeric" id="f-sk-'+i+'-v" data-path="skills.'+i+'.v" placeholder="'+baseOf(sk)+'" value="'+esc(sk.v==null?'':sk.v)+'" aria-label="'+esc(sk.n)+'">'+
+        '<div class="hf" data-hf-skill="'+i+'"><span>'+h2(v)+'</span><span>'+h5(v)+'</span></div>'+
+        (sk.custom?'<button class="del" data-del-skill="'+i+'" aria-label="Quitar">×</button>':'<span></span>')+
+        '</div>';
+    });
+    if (!rows) rows = '<div class="empty">'+(ui.filtro==='mias' && !any && !q ? 'Aún no has puesto puntos en ninguna habilidad. Pulsa <b>Todas</b> y escribe el valor de las que subas.' : 'Nada coincide.')+'</div>';
+    return '<section><h2>Habilidades <small>toca una para tirar</small></h2>'+
+      '<div class="toolbar"><input id="f-q" type="search" placeholder="Buscar habilidad" value="'+esc(ui.q)+'" data-ui="q">'+
+      '<div class="seg"><button data-filtro="mias" aria-pressed="'+(ui.filtro==='mias')+'">Mías</button><button data-filtro="todas" aria-pressed="'+(ui.filtro==='todas')+'">Todas</button></div></div>'+
+      '<div class="skills">'+rows+'</div>'+
+      '<p class="legend">☐ = marca de experiencia. Columnas: valor · difícil (½) · extremo (⅕). Vacío = valor base.</p>'+
+      '<div class="addrow"><input id="f-new-skill" placeholder="Nueva: Ciencia (Química), Otras lenguas (Francés)…"><input id="f-new-base" type="number" inputmode="numeric" placeholder="Base"><button class="btn" data-add-skill>Añadir</button></div>'+
+      '</section>';
+  }
+
+  function tabCombate(){
+    var out = '<section><h2>Armas</h2>';
+    S.armas.forEach(function(w,i){
+      var sk = skillByName(w.s), v = sk?valOf(sk):0, cap = +w.mun||0, pips = '';
+      for (var p=0;p<cap;p++) pips += '<span class="pip'+(p<(+w.carga||0)?' on':'')+'"></span>';
+      var opts = S.skills.map(function(s){ return '<option'+(s.n===w.s?' selected':'')+'>'+esc(s.n)+'</option>'; }).join('');
+      out += '<div class="weapon"><div class="top">'+inp('armas.'+i+'.n','text','aria-label="Nombre del arma"')+'<button class="del btn ghost" data-del-arma="'+i+'" aria-label="Quitar arma">×</button></div>'+
+        '<div class="tri"><div><b>'+v+'</b><span>Normal</span></div><div><b>'+h2(v)+'</b><span>Difícil</span></div><div><b>'+h5(v)+'</b><span>Extremo</span></div></div>'+
+        '<div class="wgrid">'+
+          field('Habilidad','<select id="f-armas-'+i+'-s" data-path="armas.'+i+'.s">'+opts+'</select>')+
+          field('Daño',inp('armas.'+i+'.dmg','text','placeholder="1D10"'))+field('Alcance',inp('armas.'+i+'.alc'))+
+          field('Ataques',inp('armas.'+i+'.at'))+field('Munición',inp('armas.'+i+'.mun','number'))+field('Avería',inp('armas.'+i+'.av'))+
+        '</div>'+
+        '<div class="ammo"><button class="btn ghost" data-roll-arma="'+i+'">Atacar</button><button class="btn ghost" data-dmg-arma="'+i+'">Daño</button>'+
+        (cap?'<span style="flex:1"></span>'+pips+'<button class="btn ghost" data-shot="'+i+'">Disparo</button><button class="btn ghost" data-reload="'+i+'">Recargar</button>':'')+
+        '</div></div>';
+    });
+    return out + '<button class="btn ghost" data-add-arma>Añadir arma</button></section>';
+  }
+
+  function tabTrasfondo(){
+    var T = [['descripcion','Descripción personal'],['rasgos','Rasgos'],['ideologia','Ideología / creencias'],['lesiones','Lesiones y cicatrices'],['allegados','Allegados'],['fobias','Fobias y manías'],['lugares','Lugares significativos'],['tomos','Tomos arcanos, hechizos y artefactos'],['posesiones','Posesiones preciadas'],['encuentros','Encuentros con entidades extrañas']];
+    return '<section><h2>Trasfondo</h2><div class="grid2">'+T.map(function(t){ return field(t[1],ta('trasfondo.'+t[0],3)); }).join('')+'</div></section>';
+  }
+
+  function tabEquipo(){
+    var mates = S.companeros.map(function(c,i){ return '<div class="mate">'+inp('companeros.'+i+'.p','text','placeholder="Personaje"')+inp('companeros.'+i+'.j','text','placeholder="Jugador"')+'<button class="del btn ghost" data-del-mate="'+i+'" aria-label="Quitar">×</button></div>'; }).join('');
+    return '<section><h2>Equipo y posesiones</h2>'+ta('equipo',6)+'</section>'+
+      '<section><h2>Dinero y bienes</h2><div class="grid2">'+field('Nivel de gasto',inp('dinero.gasto'))+field('Dinero',inp('dinero.dinero'))+field('Bienes',inp('dinero.bienes'))+field('Anotaciones de gasto',inp('dinero.nota'))+'</div></section>'+
+      '<section><h2>Compañeros investigadores</h2>'+(mates||'<p class="hint">Aún no has apuntado a nadie del grupo.</p>')+'<button class="btn ghost" data-add-mate>Añadir compañero</button></section>'+
+      '<section><h2>Notas de la partida</h2>'+ta('notas',8)+'</section>';
+  }
+
+  function tabCopia(){
+    var code = JSON.stringify({app:'ficha-cthulhu',v:1,state:S});
+    return '<section><h2>Copia de seguridad</h2>'+
+      '<p class="legend" style="margin-top:0">Tu ficha vive solo en este navegador. Si borras los datos, cambias de móvil o el navegador limpia el almacenamiento, se pierde. Haz una copia después de cada sesión.</p>'+
+      '<div class="toolbar">'+((downloads||STANDALONE)?'<button class="btn" data-export-file>Descargar archivo</button>':'')+'<button class="btn'+((downloads||STANDALONE)?' ghost':'')+'" data-copy-code>Copiar código</button></div>'+
+      '<textarea id="f-code" rows="5" readonly class="num" style="font-size:12px">'+esc(code)+'</textarea>'+
+      '<p class="hint" id="copy-msg"></p></section>'+
+      '<section><h2>Borrar ficha</h2><p class="legend" style="margin-top:0">Elimina a '+esc(S.info.nombre||'este investigador')+' de este móvil. No se puede deshacer.</p><button class="btn danger" data-delete-char>Borrar investigador</button></section>';
+  }
+
+  function home(){
+    var list = DB.list.map(function(e){
+      var s = e.state, i = s.info;
+      return '<button class="who" data-open="'+e.id+'"><b>'+esc(i.nombre||'Sin nombre')+'</b><span>'+esc([i.ocupacion,i.jugador?'jug. '+i.jugador:''].filter(Boolean).join(' · ')||'Ficha sin completar')+'</span><em class="num">PV '+esc(s.pv.cur===''?'—':s.pv.cur)+' · COR '+esc(s.cor.cur===''?'—':s.cor.cur)+'</em></button>';
+    }).join('');
+    return '<header class="head"><div><h1>Expedientes</h1><div class="sub">Fichas de investigador para La llamada de Cthulhu, 7ª edición</div></div><div class="stamp">ARKHAM</div></header>'+
+      (list ? '<section><h2>Tus investigadores</h2><div class="who-list">'+list+'</div></section>' :
+        '<section class="intro"><p>Crea tu investigador y rellena la ficha como harías en papel. Se guarda sola en este móvil; desde la pestaña <b>Copia</b> puedes exportarla para no perderla.</p></section>')+
+      presetSection()+
+      '<section><div class="toolbar"><button class="btn" data-new>Nuevo investigador</button></div></section>'+
+      '<section><h2>Importar una ficha</h2><p class="legend" style="margin-top:0">Pega el código de una copia de seguridad o elige el archivo descargado.</p>'+
+      '<textarea id="f-import" rows="3" placeholder="Pega aquí el código" class="num" style="font-size:12px"></textarea>'+
+      '<div class="toolbar" style="margin-top:8px"><button class="btn ghost" data-import-text>Importar código</button><label class="btn ghost filebtn">Elegir archivo<input type="file" id="f-file" accept=".json,application/json,text/plain" hidden></label></div>'+
+      '<p class="hint" id="import-msg"></p></section>'+
+      (storageOk?'':'<p class="status warn">Este navegador no permite guardar. Puedes usar la ficha, pero exporta antes de cerrar.</p>');
+  }
+
+  function presetSection(){
+    if (!PRESETS.length) return '';
+    var rows = PRESETS.map(function(p){
+      var have = DB.list.filter(function(e){ return e.preset===p.id; })[0];
+      return '<div class="preset"><div><b>'+esc(p.label)+'</b><span>'+esc([p.state.info.ocupacion, p.jugador?'jug. '+p.jugador:''].filter(Boolean).join(' · '))+'</span></div>'+
+        (have ? '<button class="btn ghost" data-open="'+have.id+'">Abrir</button>' : '<button class="btn" data-preset="'+p.id+'">Cargar</button>')+'</div>';
+    }).join('');
+    return '<section><h2>Fichas del grupo <small>pasadas del papel</small></h2><p class="legend" style="margin-top:0">Busca la tuya y pulsa Cargar: se copia a este móvil y a partir de ahí es solo tuya. Revísala con el papel antes de jugar.</p><div class="presets">'+rows+'</div></section>';
+  }
+
+  var TABS = [['ficha','Ficha'],['hab','Habilidades'],['combate','Combate'],['trasfondo','Trasfondo'],['equipo','Equipo y notas'],['copia','Copia']];
+  function render(){
+    if (ui.view==='home' || !S){ root.innerHTML = home(); return; }
+    var body = ui.tab==='hab'?tabHab():ui.tab==='combate'?tabCombate():ui.tab==='trasfondo'?tabTrasfondo():ui.tab==='equipo'?tabEquipo():ui.tab==='copia'?tabCopia():tabFicha();
+    var i = S.info;
+    root.innerHTML =
+      '<div class="topline"><button class="back" data-home>← Expedientes</button><span class="status" id="status">Se guarda solo en este móvil</span></div>'+
+      '<header class="head"><div><h1>'+esc(i.nombre||'Sin nombre')+'</h1><div class="sub">'+esc([i.ocupacion, i.edad?i.edad+' años':'', i.residencia, i.epoca].filter(Boolean).join(' · '))+'</div></div><div class="stamp">EXPEDIENTE</div></header>'+
+      '<nav class="tabs" role="tablist">'+TABS.map(function(t){ return '<button role="tab" data-tab="'+t[0]+'" aria-selected="'+(ui.tab===t[0])+'">'+t[1]+'</button>'; }).join('')+'</nav>'+
+      body+'<div id="sheet-host"></div>';
+    if (!storageOk) flashSaved();
+  }
+
+  /* ---------- tiradas ---------- */
+  var rollCtx = null;
+  function d10(){ return Math.floor(Math.random()*10); }
+  function rollD100(mod){
+    var u = d10(), n = 1+Math.abs(mod), tens = [], vals = [];
+    for (var i=0;i<n;i++){ var t=d10(); tens.push(t); var v=t*10+u; if (v===0) v=100; vals.push(v); }
+    var pick = mod>0 ? Math.min.apply(null,vals) : mod<0 ? Math.max.apply(null,vals) : vals[0];
+    return {v:pick, tens:tens, u:u};
+  }
+  function degree(v,T){
+    if (v===1) return ['¡Crítico!','g-crit'];
+    if ((T<50 && v>=96) || v===100) return ['Pifia','g-fum'];
+    if (v<=h5(T)) return ['Éxito extremo','g-ext'];
+    if (v<=h2(T)) return ['Éxito difícil','g-dif'];
+    if (v<=T) return ['Éxito normal','g-norm'];
+    return ['Fracaso','g-fail'];
+  }
+  function openRoll(title, T, note){ rollCtx = {title:title, T:T, mod:0, note:note||'', res:null}; drawRoll(); }
+  function drawRoll(){
+    var host = document.getElementById('sheet-host'); if (!host) return;
+    if (!rollCtx){ host.innerHTML=''; return; }
+    var c = rollCtx, r = c.res, resHtml = '<div class="hint">'+(c.dmg?'Pulsa tirar.':'Elige dados de bonificación o penalización y tira.')+'</div>';
+    if (r){
+      if (r.free) resHtml = '<div class="n">'+r.total+'</div><div class="dice">'+esc(r.detail)+'</div>';
+      else { var dg = degree(r.v,c.T); resHtml = '<div class="n '+dg[1]+'">'+r.v+'</div><div class="d '+dg[1]+'">'+dg[0]+'</div><div class="dice">decenas '+r.tens.map(function(t){return t*10;}).join(' / ')+' · unidad '+r.u+'</div>'; }
+    }
+    var mods = [[-2,'−2 pen.'],[-1,'−1 pen.'],[0,'Normal'],[1,'+1 bon.'],[2,'+2 bon.']].map(function(m){ return '<button data-mod="'+m[0]+'" aria-pressed="'+(c.mod===m[0])+'">'+m[1]+'</button>'; }).join('');
+    host.innerHTML = '<div class="sheet" data-close-bg><div class="card" role="dialog" aria-label="Tirada">'+
+      '<h3>'+esc(c.title)+'</h3>'+
+      (c.T!=null?'<div class="targets"><div><b>'+c.T+'</b><span>Normal</span></div><div><b>'+h2(c.T)+'</b><span>Difícil</span></div><div><b>'+h5(c.T)+'</b><span>Extremo</span></div></div><div class="mods">'+mods+'</div>':'')+
+      (c.note?'<div class="hint">'+esc(c.note)+'</div>':'')+
+      '<div class="result">'+resHtml+'</div>'+
+      '<div style="display:flex;gap:8px"><button class="btn ghost" data-close style="flex:1">Cerrar</button><button class="btn" data-do-roll style="flex:2">'+(r?'Tirar otra vez':'Tirar')+'</button></div>'+
+      '</div></div>';
+  }
+  function rollDamage(expr){
+    var e = String(expr||'').toUpperCase().replace(/\s/g,'').replace(/BD/g, String(S.bd||'0').replace(/\s/g,'').toUpperCase());
+    var total=0, parts=[], ok=false;
+    e.replace(/([+-]?)([^+-]+)/g, function(_,sg,term){
+      var sign = sg==='-'?-1:1, m = term.match(/^(\d*)D(\d+)$/);
+      if (m){ var n=+(m[1]||1), f=+m[2], rs=[]; for (var i=0;i<n;i++){ var x=1+Math.floor(Math.random()*f); rs.push(x); total+=sign*x; } parts.push((sign<0?'−':'')+term+' ['+rs.join(', ')+']'); ok=true; }
+      else if (/^\d+$/.test(term)){ total+=sign*(+term); if (+term) parts.push((sign<0?'−':'+')+term); ok=true; }
+      return '';
+    });
+    return ok ? {free:true,total:Math.max(0,total),detail:parts.join(' ')} : {free:true,total:'?',detail:'No entiendo "'+expr+'". Usa algo como 1D10 o 1D3+BD.'};
+  }
+
+  /* ---------- importar ---------- */
+  function importData(txt){
+    var msg = document.getElementById('import-msg');
+    try {
+      var o = JSON.parse(String(txt).trim());
+      var st = o && o.state ? o.state : o;
+      if (!st || !st.info || !st.car || !Array.isArray(st.skills)) throw new Error('formato');
+      var b = blank();
+      Object.keys(b).forEach(function(k){ if (st[k]===undefined) st[k]=b[k]; });
+      var id = uid(); DB.list.push({id:id, state:st}); pick(id); saveDB();
+      ui.view='sheet'; ui.tab='ficha'; render(); window.scrollTo(0,0);
+    } catch(e){ if (msg) msg.textContent = 'Ese código no es una ficha válida. Copia el código completo desde la pestaña Copia.'; }
+  }
+
+  /* ---------- eventos ---------- */
+  root.addEventListener('input', function(e){
+    var t = e.target;
+    if (t.dataset.ui==='q'){ ui.q = t.value; var pos=t.selectionStart; render(); var q=document.getElementById('f-q'); q.focus(); try{q.setSelectionRange(pos,pos);}catch(_){} return; }
+    var p = t.dataset.path; if (!p || !S) return;
+    var v;
+    if (t.type==='checkbox') v = t.checked;
+    else if (t.type==='number') v = t.value==='' ? (p.indexOf('skills.')===0?null:'') : +t.value;
+    else v = t.value;
+    setPath(p, v); liveUpdate(p, t); changed();
+  });
+  root.addEventListener('change', function(e){
+    var t = e.target;
+    if (t.tagName==='SELECT' && t.dataset.path){ setPath(t.dataset.path, t.value); changed(); render(); }
+    if (t.id==='f-file' && t.files && t.files[0]){ var r = new FileReader(); r.onload=function(){ importData(r.result); }; r.readAsText(t.files[0]); }
+  });
+  function liveUpdate(p, t){
+    if (p.indexOf('car.')===0){ var hf=document.querySelector('[data-hf="'+p+'"]'), k=p.slice(4); if (hf) hf.innerHTML='<span>½ '+h2(S.car[k])+'</span><span>⅕ '+h5(S.car[k])+'</span>'; }
+    if (p.indexOf('skills.')===0 && /\.v$/.test(p)){ var i=+p.split('.')[1], el=document.querySelector('[data-hf-skill="'+i+'"]'), v=valOf(S.skills[i]); if (el) el.innerHTML='<span>'+h2(v)+'</span><span>'+h5(v)+'</span>'; }
+    if (/^(pv|cor|suerte|pm)\./.test(p)){
+      var key=p.split('.')[0], card=t.closest('.vital');
+      if (card){ var mx = key==='suerte'?99:(+getPath(key+'.max')||1), cur=+getPath(key+'.cur')||0;
+        card.querySelector('.bar i').style.width=Math.max(0,Math.min(100,cur/mx*100))+'%';
+        var hn=card.querySelector('[data-hint]'); if (hn) hn.textContent=hints()[key]; }
+    }
+    if (p==='info.nombre'){ var h1=document.querySelector('.head h1'); if(h1) h1.textContent=S.info.nombre||'Sin nombre'; }
+  }
+
+  root.addEventListener('click', function(e){
+    var b = e.target.closest('button,[data-close-bg]'); if (!b) return;
+    var D = b.dataset;
+    if (D.closeBg!==undefined && e.target!==b) return;
+    if (D.new!==undefined){ var id=uid(); DB.list.push({id:id,state:blank()}); pick(id); saveDB(); ui.view='sheet'; ui.tab='ficha'; render(); window.scrollTo(0,0); return; }
+    if (D.preset){
+      var pr = PRESETS.filter(function(p){ return p.id===D.preset; })[0]; if (!pr) return;
+      var nid = uid(), st = JSON.parse(JSON.stringify(pr.state)), bk = blank();
+      Object.keys(bk).forEach(function(k){ if (st[k]===undefined) st[k]=bk[k]; });
+      DB.list.push({id:nid, preset:pr.id, state:st}); pick(nid); saveDB(); ui.view='sheet'; ui.tab='ficha'; render(); window.scrollTo(0,0); return;
+    }
+    if (D.open){ pick(D.open); saveDB(); ui.view='sheet'; render(); window.scrollTo(0,0); return; }
+    if (D.home!==undefined){ saveDB(); ui.view='home'; render(); window.scrollTo(0,0); return; }
+    if (D.importText!==undefined){ importData(document.getElementById('f-import').value); return; }
+    if (D.tab){ ui.tab=D.tab; try{localStorage.setItem(TAB_KEY,ui.tab);}catch(_){} render(); window.scrollTo(0,0); return; }
+    if (D.filtro){ ui.filtro=D.filtro; render(); return; }
+    if (D.step){ var cur=+getPath(D.step)||0; setPath(D.step, Math.max(0,cur+(+D.d))); changed(); render(); return; }
+    if (D.derive!==undefined){
+      if (CH.some(function(k){ return S.car[k]===''||S.car[k]==null; })){ var m=document.getElementById('derive-msg'); if (m) m.textContent='Faltan características por rellenar.'; return; }
+      derive(); changed(); render(); return;
+    }
+    if (D.rollChar){ openRoll(CHN[D.rollChar], +S.car[D.rollChar]||0); return; }
+    if (D.rollSkillI!==undefined){ var sk=S.skills[+D.rollSkillI]; openRoll(sk.n, valOf(sk)); return; }
+    if (D.rollSkill){ var s2=skillByName(D.rollSkill); if (s2) openRoll(s2.n, valOf(s2)); return; }
+    if (D.rollLuck!==undefined){ openRoll('Suerte', +S.suerte.cur||0); return; }
+    if (D.rollSan!==undefined){ openRoll('Cordura', +S.cor.cur||0, 'Las tiradas de cordura no se pueden forzar.'); return; }
+    if (D.rollArma!==undefined){ var w=S.armas[+D.rollArma], ws=skillByName(w.s); openRoll(w.n+' · '+w.s, ws?valOf(ws):0, 'Las tiradas de combate no se pueden forzar.'); return; }
+    if (D.dmgArma!==undefined){ var wa=S.armas[+D.dmgArma]; rollCtx={title:'Daño · '+wa.n, T:null, mod:0, note:wa.dmg, res:rollDamage(wa.dmg), dmg:wa.dmg}; drawRoll(); return; }
+    if (D.shot!==undefined){ var a=S.armas[+D.shot]; if ((+a.carga||0)>0){ a.carga=(+a.carga)-1; changed(); render(); } return; }
+    if (D.reload!==undefined){ var a2=S.armas[+D.reload]; a2.carga=+a2.mun||0; changed(); render(); return; }
+    if (D.addArma!==undefined){ S.armas.push({n:'Nueva arma',s:'Armas de fuego (Arma corta)',dmg:'',alc:'',at:'1',mun:'',av:'',carga:0}); changed(); render(); return; }
+    if (D.delArma!==undefined){ if (b.dataset.confirm){ S.armas.splice(+D.delArma,1); changed(); render(); } else { b.dataset.confirm='1'; b.textContent='¿Quitar?'; } return; }
+    if (D.addMate!==undefined){ S.companeros.push({p:'',j:''}); changed(); render(); return; }
+    if (D.delMate!==undefined){ S.companeros.splice(+D.delMate,1); changed(); render(); return; }
+    if (D.addSkill!==undefined){
+      var nm=document.getElementById('f-new-skill').value.trim(), bs=document.getElementById('f-new-base').value;
+      if (!nm){ document.getElementById('f-new-skill').focus(); return; }
+      S.skills.push({n:nm,b:bs===''?1:+bs,custom:true}); S.skills.sort(function(x,y){return x.n.localeCompare(y.n,'es');});
+      ui.filtro='todas'; ui.q=''; changed(); render(); return;
+    }
+    if (D.delSkill!==undefined){ if (b.dataset.confirm){ S.skills.splice(+D.delSkill,1); changed(); render(); } else { b.dataset.confirm='1'; b.textContent='?'; } return; }
+    if (D.copyCode!==undefined){
+      var tx=document.getElementById('f-code'), msg=document.getElementById('copy-msg');
+      var done=function(){ msg.textContent='Código copiado. Guárdalo en una nota o mándatelo por WhatsApp.'; };
+      var fallback=function(){ tx.focus(); tx.select(); msg.textContent='Texto seleccionado: cópialo con el menú del móvil.'; };
+      try { navigator.clipboard.writeText(tx.value).then(done, fallback); } catch(_){ fallback(); }
+      return;
+    }
+    if (D.exportFile!==undefined && STANDALONE){
+      var nms=(S.info.nombre||'investigador').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w-]+/g,'-').toLowerCase();
+      var blob=new Blob([JSON.stringify({app:'ficha-cthulhu',v:1,state:S},null,1)],{type:'application/json'});
+      var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ficha-'+nms+'.json'; document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+      document.getElementById('copy-msg').textContent='Archivo descargado. Guárdalo donde no se pierda.';
+      return;
+    }
+    if (D.exportFile!==undefined && downloads){
+      var nmf=(S.info.nombre||'investigador').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w-]+/g,'-').toLowerCase();
+      var m2=document.getElementById('copy-msg');
+      downloads.save({filename:'ficha-'+nmf+'.json', data:JSON.stringify({app:'ficha-cthulhu',v:1,state:S},null,1)}).then(function(r){ if (r && r.status==='saved') m2.textContent='Archivo descargado.'; }, function(err){ if (err && err.code==='unavailable'){ downloads=null; render(); } else m2.textContent='No se descargó. Usa Copiar código.'; });
+      return;
+    }
+    if (D.deleteChar!==undefined){
+      if (b.dataset.confirm){ DB.list=DB.list.filter(function(x){return x.id!==DB.current;}); pick(null); saveDB(); ui.view='home'; render(); window.scrollTo(0,0); }
+      else { b.dataset.confirm='1'; b.textContent='Pulsa otra vez para borrar'; }
+      return;
+    }
+    if (D.mod!==undefined){ rollCtx.mod=+D.mod; rollCtx.res=null; drawRoll(); return; }
+    if (D.doRoll!==undefined){ rollCtx.res = rollCtx.dmg ? rollDamage(rollCtx.dmg) : rollD100(rollCtx.mod); drawRoll(); return; }
+    if (D.close!==undefined || D.closeBg!==undefined){ rollCtx=null; drawRoll(); return; }
+  });
+  document.addEventListener('keydown', function(e){ if (e.key==='Escape' && rollCtx){ rollCtx=null; drawRoll(); } });
+  window.addEventListener('pagehide', function(){ clearTimeout(saveTimer); if (S) saveDB(); });
+
+  render();
+  if (window.claude && window.claude.use){
+    window.claude.use('downloads').then(function(d){ downloads=d; if (d && ui.tab==='copia' && ui.view==='sheet') render(); }, function(){});
+  }
+})();
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}</script>
+</body></html>
